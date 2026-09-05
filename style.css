@@ -74,9 +74,7 @@ header {
   font-family: "Frank Ruhl Libre", "Times New Roman", serif;
   font-weight: 700;
   font-size: 1.15rem;
-  letter-spacing: 0.04em;
   color: var(--gold);
-  direction: ltr;
   margin-bottom: 6px;
 }
 

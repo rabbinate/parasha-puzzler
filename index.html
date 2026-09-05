@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parasha Puzzler</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;600;700&family=Noto+Serif+Hebrew:wght@400;500;600;700&family=Assistant:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="brand-title">Parasha Puzzler</div>
+    <h1>פותר חידות פרשת השבוע</h1>
+    <p class="subtitle">עוזר למצוא את התשובה לחידת "קידוש טיימס" — בחרו פרשה, מספר מילים ומספר אותיות בכל מילה</p>
+  </header>
+
+  <main>
+    <section class="controls" aria-label="הגדרות חיפוש">
+      <div class="field">
+        <label for="parsha-select">פרשה</label>
+        <select id="parsha-select"></select>
+      </div>
+
+      <div class="field">
+        <label for="word-count">מספר מילים בתשובה</label>
+        <select id="word-count"></select>
+      </div>
+
+      <div id="letter-inputs" class="letter-inputs" aria-label="מספר אותיות בכל מילה"></div>
+
+      <div class="field checkbox-field">
+        <label>
+          <input type="checkbox" id="split-maqaf">
+          לפצל מילים המחוברות במקף (־) לשתי מילים נפרדות
+        </label>
+      </div>
+
+      <button id="search-btn" type="button">חפש התאמות</button>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="results" aria-label="תוצאות">
+      <div id="results-summary" class="results-summary"></div>
+      <ul id="results-list" class="results-list"></ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>טקסט הפסוקים נשלף בזמן אמת מתוך <a href="https://www.sefaria.org" target="_blank" rel="noopener">ספריא</a>.</p>
+  </footer>
+
+  <script src="parshiot.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

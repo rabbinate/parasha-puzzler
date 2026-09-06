@@ -9,21 +9,25 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <button id="lang-toggle" type="button" aria-label="Switch language / החלף שפה">
+    <span class="lang-opt" data-lang="en">E</span><span class="lang-sep">/</span><span class="lang-opt" data-lang="he">ע</span>
+  </button>
+
   <header>
     <h1 dir="ltr">Parasha Puzzler</h1>
     <div class="brand-title">פותר חידות פרשת השבוע</div>
-    <p class="subtitle" dir="ltr">Find the answer to the "Kiddush Times" picture puzzle — choose a parsha, the number of words, and how many letters are in each word</p>
+    <p class="subtitle" id="subtitle-text" dir="ltr">Find the answer to the "Kiddush Times" picture puzzle — choose a parsha, the number of words, and how many letters are in each word</p>
   </header>
 
   <main>
     <section class="controls" aria-label="הגדרות חיפוש">
       <div class="field">
-        <label for="parsha-select">פרשה</label>
+        <label for="parsha-select" id="parsha-label">Parsha</label>
         <select id="parsha-select"></select>
       </div>
 
       <div class="field">
-        <label for="word-count">מספר מילים בתשובה</label>
+        <label for="word-count" id="word-count-label">Number of words in the answer</label>
         <select id="word-count"></select>
       </div>
 
@@ -32,16 +36,16 @@
       <div class="field checkbox-field">
         <label>
           <input type="checkbox" id="split-maqaf">
-          לפצל מילים המחוברות במקף (־) לשתי מילים נפרדות
+          <span id="split-maqaf-label">Split maqaf (־) -joined words into two separate words</span>
         </label>
       </div>
 
-      <button id="search-btn" type="button">חפש התאמות</button>
+      <button id="search-btn" type="button">Search</button>
       <p id="status" class="status" role="status" aria-live="polite"></p>
     </section>
 
     <section id="saved-section" class="saved-section" aria-label="תשובות שמורות" hidden>
-      <h2 class="saved-title">תשובות שמורות לבדיקה <span id="saved-count" class="saved-count"></span></h2>
+      <h2 class="saved-title"><span id="saved-title-text">Saved answers to review</span> <span id="saved-count" class="saved-count"></span></h2>
       <ul id="saved-list" class="results-list"></ul>
     </section>
 
@@ -50,11 +54,11 @@
       <ul id="results-list" class="results-list"></ul>
     </section>
 
-    <button id="back-to-top-btn" type="button" class="back-to-top" hidden>↑ חזרה למעלה לתשובות השמורות</button>
+    <button id="back-to-top-btn" type="button" class="back-to-top" hidden>↑ Back to top, to saved answers</button>
   </main>
 
   <footer>
-    <p>טקסט הפסוקים נשלף בזמן אמת מתוך <a href="https://www.sefaria.org" target="_blank" rel="noopener">ספריא</a>.</p>
+    <p id="footer-text" dir="ltr">Verse text is fetched live from <a href="https://www.sefaria.org" target="_blank" rel="noopener">Sefaria</a>.</p>
   </footer>
 
   <script src="parshiot.js"></script>

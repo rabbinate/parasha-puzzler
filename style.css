@@ -58,11 +58,42 @@
 * { box-sizing: border-box; }
 
 body {
+  position: relative;
   margin: 0;
   background: var(--bg);
   color: var(--ink);
   font-family: "Assistant", "Segoe UI", "Arial Hebrew", Tahoma, sans-serif;
   line-height: 1.5;
+}
+
+#lang-toggle {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  direction: ltr;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink-dim);
+  cursor: pointer;
+}
+
+#lang-toggle:hover { border-color: var(--gold); }
+
+#lang-toggle .lang-sep {
+  font-weight: 400;
+  margin: 0 4px;
+  color: var(--ink-dim);
+}
+
+#lang-toggle .lang-opt.lang-active {
+  color: var(--gold);
 }
 
 header {

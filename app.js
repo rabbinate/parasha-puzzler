@@ -40,6 +40,76 @@
 
   const savedAnswers = loadSavedAnswers();
 
+  const LANG_KEY = "parshaPuzzler.lang";
+  const STRINGS = {
+    en: {
+      subtitle: 'Find the answer to the "Kiddush Times" picture puzzle — choose a parsha, the number of words, and how many letters are in each word',
+      parshaLabel: "Parsha",
+      wordCountLabel: "Number of words in the answer",
+      wordOne: "1 word",
+      wordsN: (n) => `${n} words`,
+      letterFieldLabel: (i) => `Letters in word ${i}`,
+      splitMaqafLabel: "Split maqaf (־) -joined words into two separate words",
+      searchBtn: "Search",
+      loadingStatus: (title) => `Loading the ${title} text from Sefaria...`,
+      searchingStatus: "Searching for matches...",
+      errorStatus: "There was a problem loading the text. Please try again.",
+      noMatches: "No matches found in this parsha.",
+      foundTruncated: (size, max) => `Found ${size}+ combinations (out of the first ${max} matches in the parsha):`,
+      foundExact: (size) => `Found ${size} combinations:`,
+      saveLabel: "Save",
+      savedTitle: "Saved answers to review",
+      extraOne: "Also appears once more in the parsha",
+      extraMany: (n) => `Also appears ${n} more times in the parsha`,
+      backToTop: "↑ Back to top, to saved answers",
+      footerPrefix: "Verse text is fetched live from",
+      sefariaLabel: "Sefaria",
+    },
+    he: {
+      subtitle: 'עוזר למצוא את התשובה לחידת "קידוש טיימס" — בחרו פרשה, מספר מילים ומספר אותיות בכל מילה',
+      parshaLabel: "פרשה",
+      wordCountLabel: "מספר מילים בתשובה",
+      wordOne: "מילה אחת",
+      wordsN: (n) => `${n} מילים`,
+      letterFieldLabel: (i) => `אותיות במילה ${i}`,
+      splitMaqafLabel: "לפצל מילים המחוברות במקף (־) לשתי מילים נפרדות",
+      searchBtn: "חפש התאמות",
+      loadingStatus: (title) => `טוען את פרשת ${title} מספריא...`,
+      searchingStatus: "מחפש התאמות...",
+      errorStatus: "אירעה שגיאה בשליפת הטקסט. נסו שוב.",
+      noMatches: "לא נמצאו התאמות בפרשה זו.",
+      foundTruncated: (size, max) => `נמצאו ${size}+ צירופים (מתוך ${max} המופעים הראשונים בפרשה):`,
+      foundExact: (size) => `נמצאו ${size} צירופים:`,
+      saveLabel: "שמור",
+      savedTitle: "תשובות שמורות לבדיקה",
+      extraOne: "מופיע גם פעם נוספת בפרשה",
+      extraMany: (n) => `מופיע גם ${n} פעמים נוספות בפרשה`,
+      backToTop: "↑ חזרה למעלה לתשובות השמורות",
+      footerPrefix: "טקסט הפסוקים נשלף בזמן אמת מתוך",
+      sefariaLabel: "ספריא",
+    },
+  };
+
+  let lang = localStorage.getItem(LANG_KEY) === "he" ? "he" : "en";
+  let lastRenderArgs = null;
+
+  function t(key) {
+    return STRINGS[lang][key];
+  }
+
+  // Mixed digit+Latin-word text (and text carrying a Hebrew punctuation
+  // character like maqaf) visibly reorders when it inherits an RTL
+  // ancestor with no direction of its own — every element holding
+  // translated chrome text needs its own explicit dir to render straight.
+  function currentDir() {
+    return lang === "en" ? "ltr" : "rtl";
+  }
+
+  function setStatus(text) {
+    statusEl.textContent = text;
+    statusEl.dir = currentDir();
+  }
+
   const parshaSelect = document.getElementById("parsha-select");
   const wordCountSelect = document.getElementById("word-count");
   const letterInputsEl = document.getElementById("letter-inputs");
@@ -52,6 +122,13 @@
   const savedListEl = document.getElementById("saved-list");
   const savedCountEl = document.getElementById("saved-count");
   const backToTopBtn = document.getElementById("back-to-top-btn");
+  const langToggleBtn = document.getElementById("lang-toggle");
+  const subtitleEl = document.getElementById("subtitle-text");
+  const parshaLabelEl = document.getElementById("parsha-label");
+  const wordCountLabelEl = document.getElementById("word-count-label");
+  const splitMaqafLabelEl = document.getElementById("split-maqaf-label");
+  const savedTitleTextEl = document.getElementById("saved-title-text");
+  const footerTextEl = document.getElementById("footer-text");
 
   function hebrewNumeral(n) {
     if (!Number.isFinite(n) || n <= 0) return String(n);
@@ -106,17 +183,20 @@
   }
 
   function populateWordCountSelect() {
+    const previous = wordCountSelect.value || "2";
+    wordCountSelect.innerHTML = "";
     for (let n = 1; n <= MAX_WORDS; n++) {
       const opt = document.createElement("option");
       opt.value = String(n);
-      opt.textContent = n === 1 ? "מילה אחת" : `${n} מילים`;
+      opt.textContent = n === 1 ? t("wordOne") : t("wordsN")(n);
       wordCountSelect.appendChild(opt);
     }
-    wordCountSelect.value = "2";
+    wordCountSelect.value = previous;
   }
 
   function renderLetterInputs() {
     const n = parseInt(wordCountSelect.value, 10) || 1;
+    const previousValues = Array.from(document.querySelectorAll(".letters-select")).map((s) => s.value);
     letterInputsEl.innerHTML = "";
     for (let i = 1; i <= n; i++) {
       const field = document.createElement("div");
@@ -124,7 +204,8 @@
 
       const label = document.createElement("label");
       label.setAttribute("for", `letters-${i}`);
-      label.textContent = `אותיות במילה ${i}`;
+      label.textContent = t("letterFieldLabel")(i);
+      label.dir = currentDir();
       field.appendChild(label);
 
       const select = document.createElement("select");
@@ -136,7 +217,7 @@
         opt.textContent = String(L);
         select.appendChild(opt);
       }
-      select.value = "3";
+      select.value = previousValues[i - 1] || "3";
       field.appendChild(select);
 
       letterInputsEl.appendChild(field);
@@ -224,7 +305,7 @@
     });
 
     label.appendChild(checkbox);
-    label.appendChild(document.createTextNode("שמור"));
+    label.appendChild(document.createTextNode(t("saveLabel")));
     return label;
   }
 
@@ -372,9 +453,10 @@
   function renderResults(words, matchIndices, pattern) {
     listEl.innerHTML = "";
     const n = pattern.length;
+    summaryEl.dir = currentDir();
 
     if (matchIndices.length === 0) {
-      summaryEl.textContent = "לא נמצאו התאמות בפרשה זו.";
+      summaryEl.textContent = t("noMatches");
       backToTopBtn.hidden = true;
       return;
     }
@@ -383,8 +465,8 @@
     const groups = groupMatches(words, matchIndices, n);
     const truncated = matchIndices.length >= MAX_RESULTS;
     summaryEl.textContent = truncated
-      ? `נמצאו ${groups.size}+ צירופים (מתוך ${MAX_RESULTS} המופעים הראשונים בפרשה):`
-      : `נמצאו ${groups.size} צירופים:`;
+      ? t("foundTruncated")(groups.size, MAX_RESULTS)
+      : t("foundExact")(groups.size);
 
     const frag = document.createDocumentFragment();
     for (const [key, occurrences] of groups.entries()) {
@@ -432,8 +514,9 @@
         details.className = "extra-occurrences";
         const summary = document.createElement("summary");
         summary.textContent = extras.length === 1
-          ? "מופיע גם פעם נוספת בפרשה"
-          : `מופיע גם ${extras.length} פעמים נוספות בפרשה`;
+          ? t("extraOne")
+          : t("extraMany")(extras.length);
+        summary.dir = currentDir();
         details.appendChild(summary);
 
         for (const occ of extras) {
@@ -506,23 +589,58 @@
 
     searchBtn.disabled = true;
     statusEl.classList.remove("error");
-    statusEl.textContent = `טוען את פרשת ${currentParsha.heTitle} מספריא...`;
+    setStatus(t("loadingStatus")(currentParsha.heTitle));
     summaryEl.textContent = "";
     listEl.innerHTML = "";
+    lastRenderArgs = null;
 
     try {
       const verses = await getVersesForParsha(currentParsha.wholeRef);
-      statusEl.textContent = "מחפש התאמות...";
+      setStatus(t("searchingStatus"));
       const words = tokenizeVerses(verses, splitMaqaf);
       const matches = findMatches(words, pattern);
+      lastRenderArgs = [words, matches, pattern];
       renderResults(words, matches, pattern);
-      statusEl.textContent = "";
+      setStatus("");
     } catch (err) {
       console.error(err);
-      statusEl.textContent = "אירעה שגיאה בשליפת הטקסט. נסו שוב.";
+      setStatus(t("errorStatus"));
       statusEl.classList.add("error");
     } finally {
       searchBtn.disabled = false;
+    }
+  }
+
+  function applyLanguage() {
+    langToggleBtn.querySelectorAll(".lang-opt").forEach((el) => {
+      el.classList.toggle("lang-active", el.dataset.lang === lang);
+    });
+
+    const dir = currentDir();
+    subtitleEl.textContent = t("subtitle");
+    subtitleEl.dir = dir;
+    parshaLabelEl.textContent = t("parshaLabel");
+    wordCountLabelEl.textContent = t("wordCountLabel");
+    wordCountSelect.dir = dir;
+    splitMaqafLabelEl.textContent = t("splitMaqafLabel");
+    splitMaqafLabelEl.closest("label").dir = dir;
+    searchBtn.textContent = t("searchBtn");
+    savedTitleTextEl.textContent = t("savedTitle");
+    savedTitleTextEl.closest(".saved-title").dir = dir;
+    backToTopBtn.textContent = t("backToTop");
+    backToTopBtn.dir = dir;
+    footerTextEl.dir = dir;
+    footerTextEl.innerHTML = `${t("footerPrefix")} <a href="https://www.sefaria.org" target="_blank" rel="noopener">${t("sefariaLabel")}</a>.`;
+
+    populateWordCountSelect();
+    renderLetterInputs();
+    if (lastRenderArgs) renderResults(...lastRenderArgs);
+    renderSavedPanel();
+
+    try {
+      localStorage.setItem(LANG_KEY, lang);
+    } catch {
+      // Storage unavailable — the choice just won't persist across reloads.
     }
   }
 
@@ -530,11 +648,16 @@
   populateWordCountSelect();
   renderLetterInputs();
   renderSavedPanel();
+  applyLanguage();
 
   wordCountSelect.addEventListener("change", renderLetterInputs);
   searchBtn.addEventListener("click", runSearch);
   backToTopBtn.addEventListener("click", () => {
     const target = savedSectionEl.hidden ? document.body : savedSectionEl;
     target.scrollIntoView({ block: "start" });
+  });
+  langToggleBtn.addEventListener("click", () => {
+    lang = lang === "en" ? "he" : "en";
+    applyLanguage();
   });
 })();

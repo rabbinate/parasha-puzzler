@@ -18,6 +18,28 @@
   // in-memory cache: wholeRef -> Promise<Array<{chapter, verse, heHtml}>>
   const verseCache = new Map();
 
+  const STORAGE_KEY = "parshaPuzzler.savedAnswers";
+
+  function loadSavedAnswers() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return new Map(arr.map((item) => [item.id, item]));
+    } catch {
+      return new Map();
+    }
+  }
+
+  function persistSavedAnswers() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(savedAnswers.values())));
+    } catch {
+      // Storage unavailable (private browsing, quota, etc.) — saving is best-effort.
+    }
+  }
+
+  const savedAnswers = loadSavedAnswers();
+
   const parshaSelect = document.getElementById("parsha-select");
   const wordCountSelect = document.getElementById("word-count");
   const letterInputsEl = document.getElementById("letter-inputs");
@@ -26,6 +48,9 @@
   const statusEl = document.getElementById("status");
   const summaryEl = document.getElementById("results-summary");
   const listEl = document.getElementById("results-list");
+  const savedSectionEl = document.getElementById("saved-section");
+  const savedListEl = document.getElementById("saved-list");
+  const savedCountEl = document.getElementById("saved-count");
 
   function hebrewNumeral(n) {
     if (!Number.isFinite(n) || n <= 0) return String(n);
@@ -158,11 +183,10 @@
     return out;
   }
 
-  function renderTilePhrase(words, matchStart, matchEnd) {
+  function renderTileRow(bareWords) {
     const container = document.createElement("div");
     container.className = "tile-phrase";
-    for (let i = matchStart; i <= matchEnd; i++) {
-      const bare = bareConsonants(words[i].text);
+    for (const bare of bareWords) {
       const wordEl = document.createElement("div");
       wordEl.className = "tile-word";
       for (const ch of bare) {
@@ -175,6 +199,46 @@
       container.appendChild(wordEl);
     }
     return container;
+  }
+
+  function buildSaveToggle(id, checked, getRecord) {
+    const row = document.createElement("div");
+    row.className = "card-actions";
+
+    const label = document.createElement("label");
+    label.className = checked ? "save-toggle is-saved" : "save-toggle";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = checked;
+    checkbox.dataset.saveId = id;
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) {
+        savedAnswers.set(id, getRecord());
+        label.classList.add("is-saved");
+      } else {
+        savedAnswers.delete(id);
+        label.classList.remove("is-saved");
+      }
+      persistSavedAnswers();
+      renderSavedPanel();
+      syncSaveCheckboxes(id, checkbox.checked);
+    });
+
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode("שמור"));
+    row.appendChild(label);
+    return row;
+  }
+
+  function syncSaveCheckboxes(id, checked) {
+    document.querySelectorAll(`input[data-save-id="${CSS.escape(id)}"]`).forEach((cb) => {
+      if (cb.checked !== checked) {
+        cb.checked = checked;
+        const label = cb.closest(".save-toggle");
+        if (label) label.classList.toggle("is-saved", checked);
+      }
+    });
   }
 
   async function fetchVersesForRef(ref) {
@@ -267,8 +331,8 @@
     return `${parsha.heTitle} ${from} – ${to}`;
   }
 
-  function sefariaLink(chapter, verse) {
-    return `https://www.sefaria.org/${encodeURIComponent(currentParsha.book)}.${chapter}.${verse}`;
+  function sefariaLink(book, chapter, verse) {
+    return `https://www.sefaria.org/${encodeURIComponent(book)}.${chapter}.${verse}`;
   }
 
   let currentParsha = null;
@@ -291,7 +355,7 @@
     metaEl.className = "result-meta";
 
     const link = document.createElement("a");
-    link.href = sefariaLink(first.chapter, first.verse);
+    link.href = sefariaLink(currentParsha.book, first.chapter, first.verse);
     link.target = "_blank";
     link.rel = "noopener";
     link.textContent = verseRefLabel(currentParsha, first.chapter, first.verse, last.chapter, last.verse);
@@ -316,15 +380,34 @@
       : `נמצאו ${groups.size} צירופים:`;
 
     const frag = document.createDocumentFragment();
-    for (const occurrences of groups.values()) {
+    for (const [key, occurrences] of groups.entries()) {
       const primary = occurrences[0];
       const extras = occurrences.slice(1);
+      const first = words[primary.start];
+      const last = words[primary.end];
+      const tiles = words.slice(primary.start, primary.end + 1).map((w) => bareConsonants(w.text));
       const phrase = words.slice(primary.start, primary.end + 1).map((w) => stripTrop(w.text)).join(" ");
+      const contextHtml = buildContext(words, primary.start, primary.end);
+      const saveId = `${currentParsha.wholeRef}::${key}`;
 
       const li = document.createElement("li");
       li.className = "result-card";
 
-      li.appendChild(renderTilePhrase(words, primary.start, primary.end));
+      li.appendChild(buildSaveToggle(saveId, savedAnswers.has(saveId), () => ({
+        id: saveId,
+        wholeRef: currentParsha.wholeRef,
+        parshaTitle: currentParsha.heTitle,
+        parshaBook: currentParsha.book,
+        tiles,
+        vocalized: phrase,
+        chapterFrom: first.chapter,
+        verseFrom: first.verse,
+        chapterTo: last.chapter,
+        verseTo: last.verse,
+        contextHtml,
+      })));
+
+      li.appendChild(renderTileRow(tiles));
 
       const vocalizedEl = document.createElement("p");
       vocalizedEl.className = "vocalized";
@@ -335,7 +418,7 @@
 
       const contextEl = document.createElement("p");
       contextEl.className = "result-context";
-      contextEl.innerHTML = buildContext(words, primary.start, primary.end);
+      contextEl.innerHTML = contextHtml;
       li.appendChild(contextEl);
 
       if (extras.length > 0) {
@@ -363,6 +446,48 @@
       frag.appendChild(li);
     }
     listEl.appendChild(frag);
+  }
+
+  function renderSavedPanel() {
+    const items = Array.from(savedAnswers.values());
+    savedSectionEl.hidden = items.length === 0;
+    savedCountEl.textContent = items.length ? String(items.length) : "";
+    savedListEl.innerHTML = "";
+
+    const frag = document.createDocumentFragment();
+    for (const item of items) {
+      const li = document.createElement("li");
+      li.className = "result-card";
+
+      li.appendChild(buildSaveToggle(item.id, true, () => item));
+      li.appendChild(renderTileRow(item.tiles));
+
+      const vocalizedEl = document.createElement("p");
+      vocalizedEl.className = "vocalized";
+      vocalizedEl.textContent = item.vocalized;
+      li.appendChild(vocalizedEl);
+
+      const metaEl = document.createElement("div");
+      metaEl.className = "result-meta";
+      const link = document.createElement("a");
+      link.href = sefariaLink(item.parshaBook, item.chapterFrom, item.verseFrom);
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.textContent = verseRefLabel(
+        { heTitle: item.parshaTitle },
+        item.chapterFrom, item.verseFrom, item.chapterTo, item.verseTo
+      );
+      metaEl.appendChild(link);
+      li.appendChild(metaEl);
+
+      const contextEl = document.createElement("p");
+      contextEl.className = "result-context";
+      contextEl.innerHTML = item.contextHtml;
+      li.appendChild(contextEl);
+
+      frag.appendChild(li);
+    }
+    savedListEl.appendChild(frag);
   }
 
   async function runSearch() {
@@ -399,6 +524,7 @@
   populateParshaSelect();
   populateWordCountSelect();
   renderLetterInputs();
+  renderSavedPanel();
 
   wordCountSelect.addEventListener("change", renderLetterInputs);
   searchBtn.addEventListener("click", runSearch);

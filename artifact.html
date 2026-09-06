@@ -278,12 +278,6 @@
     color: var(--ink-dim);
   }
 
-  .card-actions {
-    display: flex;
-    justify-content: flex-start;
-    margin-bottom: 12px;
-  }
-
   .save-toggle {
     display: inline-flex;
     align-items: center;
@@ -293,6 +287,7 @@
     color: var(--ink-dim);
     cursor: pointer;
     user-select: none;
+    flex-shrink: 0;
   }
 
   .save-toggle input {
@@ -322,11 +317,19 @@
     padding: 18px 20px 16px;
   }
 
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
   .tile-phrase {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-bottom: 10px;
   }
 
   .tile-word {
@@ -408,6 +411,23 @@
     border-top: 1px dashed var(--border);
   }
 
+  .back-to-top {
+    display: block;
+    width: fit-content;
+    margin: 28px auto 0;
+    background: var(--panel);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 10px 22px;
+    border-radius: 999px;
+    font-family: "Assistant", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .back-to-top:hover { filter: brightness(1.1); }
+
   footer {
     text-align: center;
     padding: 30px 20px 10px;
@@ -462,6 +482,8 @@
 
   <div id="results-summary" class="results-summary"></div>
   <ul id="results-list" class="results-list"></ul>
+
+  <button id="back-to-top-btn" type="button" class="back-to-top" hidden>↑ חזרה למעלה לתשובות השמורות</button>
 
   <footer>
     <p>טקסט הפסוקים מבוסס על <a href="https://www.sefaria.org" target="_blank" rel="noopener">ספריא</a>, וטעון מראש בתוך העמוד — אין קריאה חיה לאינטרנט.</p>
@@ -522,6 +544,7 @@ const PARSHIOT = [{"book":"Genesis","title":"Bereshit","heTitle":"בראשית",
   const savedSectionEl = document.getElementById("saved-section");
   const savedListEl = document.getElementById("saved-list");
   const savedCountEl = document.getElementById("saved-count");
+  const backToTopBtn = document.getElementById("back-to-top-btn");
 
   let currentParsha = null;
 
@@ -728,9 +751,6 @@ const PARSHIOT = [{"book":"Genesis","title":"Bereshit","heTitle":"בראשית",
   }
 
   function buildSaveToggle(id, checked, getRecord) {
-    const row = document.createElement("div");
-    row.className = "card-actions";
-
     const label = document.createElement("label");
     label.className = checked ? "save-toggle is-saved" : "save-toggle";
 
@@ -753,8 +773,15 @@ const PARSHIOT = [{"book":"Genesis","title":"Bereshit","heTitle":"בראשית",
 
     label.appendChild(checkbox);
     label.appendChild(document.createTextNode("שמור"));
-    row.appendChild(label);
-    return row;
+    return label;
+  }
+
+  function buildCardHeader(tiles, saveToggle) {
+    const header = document.createElement("div");
+    header.className = "card-header";
+    header.appendChild(renderTileRow(tiles));
+    header.appendChild(saveToggle);
+    return header;
   }
 
   function syncSaveCheckboxes(id, checked) {
@@ -798,8 +825,10 @@ const PARSHIOT = [{"book":"Genesis","title":"Bereshit","heTitle":"בראשית",
 
     if (matchIndices.length === 0) {
       summaryEl.textContent = "לא נמצאו התאמות בפרשה זו.";
+      backToTopBtn.hidden = true;
       return;
     }
+    backToTopBtn.hidden = false;
 
     const groups = groupMatches(words, matchIndices, n);
     const truncated = matchIndices.length >= MAX_RESULTS;
@@ -821,7 +850,7 @@ const PARSHIOT = [{"book":"Genesis","title":"Bereshit","heTitle":"בראשית",
       const li = document.createElement("li");
       li.className = "result-card";
 
-      li.appendChild(buildSaveToggle(saveId, savedAnswers.has(saveId), () => ({
+      const saveToggle = buildSaveToggle(saveId, savedAnswers.has(saveId), () => ({
         id: saveId,
         wholeRef: currentParsha.wholeRef,
         parshaTitle: currentParsha.heTitle,
@@ -833,9 +862,8 @@ const PARSHIOT = [{"book":"Genesis","title":"Bereshit","heTitle":"בראשית",
         chapterTo: last.chapter,
         verseTo: last.verse,
         contextHtml,
-      })));
-
-      li.appendChild(renderTileRow(tiles));
+      }));
+      li.appendChild(buildCardHeader(tiles, saveToggle));
 
       const vocalized = document.createElement("p");
       vocalized.className = "vocalized";
@@ -887,8 +915,7 @@ const PARSHIOT = [{"book":"Genesis","title":"Bereshit","heTitle":"בראשית",
       const li = document.createElement("li");
       li.className = "result-card";
 
-      li.appendChild(buildSaveToggle(item.id, true, () => item));
-      li.appendChild(renderTileRow(item.tiles));
+      li.appendChild(buildCardHeader(item.tiles, buildSaveToggle(item.id, true, () => item)));
 
       const vocalizedEl = document.createElement("p");
       vocalizedEl.className = "vocalized";
@@ -951,5 +978,9 @@ const PARSHIOT = [{"book":"Genesis","title":"Bereshit","heTitle":"בראשית",
 
   wordCountSelect.addEventListener("change", renderLetterInputs);
   searchBtn.addEventListener("click", runSearch);
+  backToTopBtn.addEventListener("click", () => {
+    const target = savedSectionEl.hidden ? document.body : savedSectionEl;
+    target.scrollIntoView({ block: "start" });
+  });
 })();
 </script>

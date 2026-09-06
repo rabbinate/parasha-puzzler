@@ -204,12 +204,6 @@ button#search-btn:disabled { opacity: 0.6; cursor: wait; }
   color: var(--ink-dim);
 }
 
-.card-actions {
-  display: flex;
-  justify-content: flex-start;
-  margin-bottom: 10px;
-}
-
 .save-toggle {
   display: inline-flex;
   align-items: center;
@@ -219,6 +213,7 @@ button#search-btn:disabled { opacity: 0.6; cursor: wait; }
   color: var(--ink-dim);
   cursor: pointer;
   user-select: none;
+  flex-shrink: 0;
 }
 
 .save-toggle input {
@@ -248,11 +243,19 @@ button#search-btn:disabled { opacity: 0.6; cursor: wait; }
   padding: 14px 18px;
 }
 
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
 .tile-phrase {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 10px;
 }
 
 .tile-word {
@@ -338,6 +341,21 @@ button#search-btn:disabled { opacity: 0.6; cursor: wait; }
 .extra-occurrence:first-of-type {
   margin-top: 12px;
 }
+
+.back-to-top {
+  align-self: center;
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  padding: 10px 20px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.back-to-top:hover { filter: brightness(1.1); }
 
 footer {
   text-align: center;

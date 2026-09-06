@@ -51,6 +51,7 @@
   const savedSectionEl = document.getElementById("saved-section");
   const savedListEl = document.getElementById("saved-list");
   const savedCountEl = document.getElementById("saved-count");
+  const backToTopBtn = document.getElementById("back-to-top-btn");
 
   function hebrewNumeral(n) {
     if (!Number.isFinite(n) || n <= 0) return String(n);
@@ -202,9 +203,6 @@
   }
 
   function buildSaveToggle(id, checked, getRecord) {
-    const row = document.createElement("div");
-    row.className = "card-actions";
-
     const label = document.createElement("label");
     label.className = checked ? "save-toggle is-saved" : "save-toggle";
 
@@ -227,8 +225,15 @@
 
     label.appendChild(checkbox);
     label.appendChild(document.createTextNode("שמור"));
-    row.appendChild(label);
-    return row;
+    return label;
+  }
+
+  function buildCardHeader(tiles, saveToggle) {
+    const header = document.createElement("div");
+    header.className = "card-header";
+    header.appendChild(renderTileRow(tiles));
+    header.appendChild(saveToggle);
+    return header;
   }
 
   function syncSaveCheckboxes(id, checked) {
@@ -370,8 +375,10 @@
 
     if (matchIndices.length === 0) {
       summaryEl.textContent = "לא נמצאו התאמות בפרשה זו.";
+      backToTopBtn.hidden = true;
       return;
     }
+    backToTopBtn.hidden = false;
 
     const groups = groupMatches(words, matchIndices, n);
     const truncated = matchIndices.length >= MAX_RESULTS;
@@ -393,7 +400,7 @@
       const li = document.createElement("li");
       li.className = "result-card";
 
-      li.appendChild(buildSaveToggle(saveId, savedAnswers.has(saveId), () => ({
+      const saveToggle = buildSaveToggle(saveId, savedAnswers.has(saveId), () => ({
         id: saveId,
         wholeRef: currentParsha.wholeRef,
         parshaTitle: currentParsha.heTitle,
@@ -405,9 +412,8 @@
         chapterTo: last.chapter,
         verseTo: last.verse,
         contextHtml,
-      })));
-
-      li.appendChild(renderTileRow(tiles));
+      }));
+      li.appendChild(buildCardHeader(tiles, saveToggle));
 
       const vocalizedEl = document.createElement("p");
       vocalizedEl.className = "vocalized";
@@ -459,8 +465,7 @@
       const li = document.createElement("li");
       li.className = "result-card";
 
-      li.appendChild(buildSaveToggle(item.id, true, () => item));
-      li.appendChild(renderTileRow(item.tiles));
+      li.appendChild(buildCardHeader(item.tiles, buildSaveToggle(item.id, true, () => item)));
 
       const vocalizedEl = document.createElement("p");
       vocalizedEl.className = "vocalized";
@@ -528,4 +533,8 @@
 
   wordCountSelect.addEventListener("change", renderLetterInputs);
   searchBtn.addEventListener("click", runSearch);
+  backToTopBtn.addEventListener("click", () => {
+    const target = savedSectionEl.hidden ? document.body : savedSectionEl;
+    target.scrollIntoView({ block: "start" });
+  });
 })();
